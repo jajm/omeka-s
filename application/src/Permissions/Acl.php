@@ -102,4 +102,16 @@ class Acl extends ZendAcl
     {
         return in_array($role, $this->adminRoles);
     }
+
+    public function addRoleLabel($role,$label)
+    {
+        if ($role instanceof Role\RoleInterface) {
+            $roleId = $role->getRoleId();
+        } else {
+            $roleId = $role;
+        }
+
+        $this->roleLabels[$roleId] = $label;
+    }
+
 }
