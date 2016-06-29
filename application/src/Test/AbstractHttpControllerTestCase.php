@@ -76,6 +76,7 @@ abstract class AbstractHttpControllerTestCase extends ZendAbstractHttpController
         return $this->application;
     }
 
+
     protected function resetApplication()
     {
         $this->application = null;
@@ -93,13 +94,20 @@ abstract class AbstractHttpControllerTestCase extends ZendAbstractHttpController
 
 
     protected function addSite($title) {
+
       $site = new Site;
+
+      $em= $this->getApplicationServiceLocator()->get('Omeka\EntityManager');
+      if ($em->getRepository('Omeka\Entity\Site')->findBy(['title'=>$title]))
+          return true;
+
       $site->setTitle($title);
       $site->setSlug($title);
       $site->setTheme('default');
       $site->setNavigation([["type" =>"browse","data" => ["label"=>"Browse","query"=>""],"links"=>[]]]);
       $site->setIsPublic(true);
       $site->setItemPool(true);
+
       $this->persistAndSave($site);
       return $site;
     }
@@ -108,7 +116,6 @@ abstract class AbstractHttpControllerTestCase extends ZendAbstractHttpController
     {
 
       $em= $this->getApplicationServiceLocator()->get('Omeka\EntityManager');
-
       $em->persist($entity);
       $em->flush();
     }
@@ -135,5 +142,4 @@ abstract class AbstractHttpControllerTestCase extends ZendAbstractHttpController
       $settings = $this->getApplicationServiceLocator()->get('Omeka\Settings');
       $settings->set($id,$value);
     }
-
 }
