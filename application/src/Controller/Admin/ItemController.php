@@ -286,6 +286,7 @@ class ItemController extends AbstractActionController
                     $this->api($form)->batchUpdate('items', $resourceIds, $properties, [
                         'continueOnError' => true,
                         'collectionAction' => $collectionAction,
+                        'detachEntities' => false,
                     ]);
                 }
 

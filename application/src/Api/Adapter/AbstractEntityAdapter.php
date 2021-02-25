@@ -307,7 +307,11 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
         $apiManager = $this->getServiceLocator()->get('Omeka\ApiManager');
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
-        $originalIdentityMap = $this->getEntityManager()->getUnitOfWork()->getIdentityMap();
+        $detachEntities = $request->getOption('detachEntities', true);
+
+        if ($detachEntities) {
+            $originalIdentityMap = $this->getEntityManager()->getUnitOfWork()->getIdentityMap();
+        }
 
         $subresponses = [];
         $subrequestOptions = [
@@ -326,7 +330,9 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
                     continue;
                 }
                 // Detatch previously persisted entities before re-throwing.
-                $this->detachAllNewEntities($originalIdentityMap);
+                if ($detachEntities) {
+                    $this->detachAllNewEntities($originalIdentityMap);
+                }
                 throw $e;
             }
             $subresponses[$key] = $subresponse;
@@ -343,7 +349,9 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
             $entities[$key] = $entity;
         }
 
-        $this->detachAllNewEntities($originalIdentityMap);
+        if ($detachEntities) {
+            $this->detachAllNewEntities($originalIdentityMap);
+        }
 
         $request->setOption('responseContent', 'reference');
         return new Response($entities);
@@ -378,7 +386,11 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
         $apiManager = $this->getServiceLocator()->get('Omeka\ApiManager');
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
-        $originalIdentityMap = $this->getEntityManager()->getUnitOfWork()->getIdentityMap();
+        $detachEntities = $request->getOption('detachEntities', true);
+
+        if ($detachEntities) {
+            $originalIdentityMap = $this->getEntityManager()->getUnitOfWork()->getIdentityMap();
+        }
 
         $subresponses = [];
         $subrequestOptions = [
@@ -399,11 +411,14 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
                     continue;
                 }
                 // Detatch managed entities before re-throwing.
-                $this->detachAllNewEntities($originalIdentityMap);
+                if ($detachEntities) {
+                    $this->detachAllNewEntities($originalIdentityMap);
+                }
                 throw $e;
             }
             $subresponses[$key] = $subresponse;
         }
+
         $this->getEntityManager()->flush();
 
         $entities = [];
@@ -415,7 +430,9 @@ abstract class AbstractEntityAdapter extends AbstractAdapter implements EntityAd
             $entity = $subresponse->getContent();
             $entities[$key] = $entity;
         }
-        $this->detachAllNewEntities($originalIdentityMap);
+        if ($detachEntities) {
+            $this->detachAllNewEntities($originalIdentityMap);
+        }
 
         $request->setOption('responseContent', 'reference');
         return new Response($entities);
