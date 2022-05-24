@@ -2,28 +2,34 @@
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'item-sets browse');
-$sortHeadings = [
-    [
+$lockedSortHeadings = [
+    'title' => [
         'label' => $translate('Title'),
-        'value' => 'title'
+        'value' => 'title',
     ],
-    [
+    'dcterms:identifier' => [
         'label' => $translate('Identifier'),
-        'value' => 'dcterms:identifier'
-    ],
-    [
-        'label' => $translate('Class'),
-        'value' => 'resource_class_label'
-    ],
-    [
-        'label' => $translate('Owner'),
-        'value' => 'owner_name'
-    ],
-    [
-        'label' => $translate('Created'),
-        'value' => 'created'
+        'value' => 'dcterms:identifier',
     ],
 ];
+$labelMapping = [
+    'resource_class_label' => $translate('Class'),
+    'owner_name' => $translate('Owner'),
+    'created' => $translate('Created')
+];
+$columns = $this->setting('browse_resource_columns', array_keys($labelMapping));
+foreach ($columns as $column) {
+    if (array_key_exists($column, $labelMapping)) {
+        $sortHeadings[$column] = ['label'=> $labelMapping[$column], 'value' => $column];
+    } else {
+        if (!array_key_exists($column, $sortHeadings) && $column !== 'dcterms:title') {
+            $property = $this->api()->searchOne('properties', ['term' => $column])->getContent();
+            $sortHeadings[$column] = ['label' => $translate($property->label()), 'value' => $column];
+        }
+    }
+}
+$resourceColumns = $sortHeadings;
+$sortHeadings = array_merge($lockedSortHeadings, $sortHeadings);
 ?>
 
 <?php echo $this->pageTitle($translate('Item sets')); ?>
@@ -72,9 +78,11 @@ $sortHeadings = [
                 <input type="checkbox" class="select-all" aria-label="<?php echo $translate('Select all'); ?>">
                 <?php echo $translate('Title'); ?>
             </th>
-            <th><?php echo $translate('Class'); ?></th>
-            <th><?php echo $translate('Owner'); ?></th>
-            <th><?php echo $translate('Created'); ?></th>
+            <?php foreach ($resourceColumns as $column): ?>
+                <th>
+                    <?php echo($column['label']); ?>
+                </th>
+             <?php endforeach; ?>
         </tr>
     </thead>
     <tbody>
@@ -125,9 +133,20 @@ $sortHeadings = [
                     ]); ?></li>
                 </ul>
             </td>
-            <td><?php echo $escape($translate($itemSet->displayResourceClassLabel())); ?></td>
-            <td><?php echo $ownerText; ?></td>
-            <td><?php echo $escape($this->i18n()->dateFormat($itemSet->created())); ?></td>
+            <?php foreach ($resourceColumns as $column) { ?>
+                <td>
+                    <?php if ($column['value'] === 'resource_class_label') {
+                            echo $escape($translate($itemSet->displayResourceClassLabel()));
+                        } elseif ($column['value'] === 'owner_name') {
+                            echo $ownerText;
+                        } elseif ($column['value'] === 'created') {
+                            echo $escape($this->i18n()->dateFormat($itemSet->created()));
+                        } else {
+                            echo $itemSet->value($column['value']);
+                        } 
+                    ?>
+                </td>
+            <?php }?>
         </tr>
         <?php endforeach; ?>
     </tbody>
